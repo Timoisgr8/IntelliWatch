@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>IntelliWatch</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap"
+          rel="stylesheet"/>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+          --bg: #0a0c10;
+          --surface: #11141a;
+          --surface2: #181c24;
+          --border: #1e2330;
+          --accent: #00d4ff;
+          --accent2: #7b61ff;
+          --text: #e8eaf0;
+          --text-muted: #6b7280;
+          --text-dim: #3d4452;
+          --green: #00e5a0;
+          --red: #ff4d6d;
+          --orange: #ff9f43;
+          --yellow: #ffd166;
+          --purple: #9b59b6;
+          --blue: #4a9eff;
+          --radius: 8px;
+        }
+
+        body {
+          background: var(--bg);
+          color: var(--text);
+          font-family: 'DM Mono', monospace;
+          min-height: 100vh;
+          overflow-x: hidden;
+        }
+
+        /* Subtle grid background */
+        body::before {
+          content: '';
+          position: fixed;
+          inset: 0;
+          background-image:
+            linear-gradient(var(--border) 1px, transparent 1px),
+            linear-gradient(90deg, var(--border) 1px, transparent 1px);
+          background-size: 40px 40px;
+          opacity: 0.3;
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        /* Top accent line */
+        body::after {
+          content: '';
+          position: fixed;
+          top: 0; left: 0; right: 0;
+          height: 2px;
+          background: linear-gradient(90deg, var(--accent2), var(--accent), var(--green));
+          z-index: 100;
+        }
+
+        .container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 24px;
+          position: relative;
+          z-index: 1;
+        }
+
+        /* ── Header ── */
+        header {
+          padding: 40px 0 32px;
+          border-bottom: 1px solid var(--border);
+          margin-bottom: 40px;
+        }
+
+        .header-inner {
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 24px;
+          flex-wrap: wrap;
+        }
+
+        .logo-block {}
+
+        .logo {
+          font-family: 'Syne', sans-serif;
+          font-size: 28px;
+          font-weight: 800;
+          letter-spacing: -0.5px;
+          line-height: 1;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 6px;
+        }
+
+        .logo-icon {
+          width: 28px;
+          height: 28px;
+          border: 2px solid var(--accent);
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .logo-icon svg { width: 14px; height: 14px; }
+
+        .logo span.accent { color: var(--accent); }
+
+        .tagline {
+          font-size: 11px;
+          color: var(--text-muted);
+          letter-spacing: 2px;
+          text-transform: uppercase;
+        }
+
+        .header-actions {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+        }
+
+        .status-pill {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11px;
+          color: var(--text-muted);
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          padding: 6px 12px;
+          border: 1px solid var(--border);
+          border-radius: 20px;
+        }
+
+        .status-dot {
+          width: 6px; height: 6px;
+          border-radius: 50%;
+          background: var(--green);
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+
+        /* ── Buttons ── */
+        .btn {
+          font-family: 'DM Mono', monospace;
+          font-size: 12px;
+          font-weight: 500;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          padding: 10px 20px;
+          border-radius: var(--radius);
+          border: 1px solid transparent;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          white-space: nowrap;
+        }
+
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .btn-primary {
+          background: var(--accent);
+          color: #000;
+          border-color: var(--accent);
+        }
+        .btn-primary:hover:not(:disabled) {
+          background: #00b8d9;
+          border-color: #00b8d9;
+        }
+
+        .btn-secondary {
+          background: transparent;
+          color: var(--accent2);
+          border-color: var(--accent2);
+        }
+        .btn-secondary:hover:not(:disabled) {
+          background: rgba(123,97,255,0.1);
+        }
+
+        .btn-ghost {
+          background: transparent;
+          color: var(--text-muted);
+          border-color: var(--border);
+        }
+        .btn-ghost:hover:not(:disabled) {
+          color: var(--text);
+          border-color: var(--text-dim);
+        }
+
+        .btn .spinner {
+          width: 12px; height: 12px;
+          border: 2px solid currentColor;
+          border-top-color: transparent;
+          border-radius: 50%;
+          animation: spin 0.7s linear infinite;
+          display: none;
+        }
+
+        .btn.loading .spinner { display: block; }
+        .btn.loading .btn-label { display: none; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Stats bar ── */
+        .stats-bar {
+          display: flex;
+          gap: 1px;
+          margin-bottom: 32px;
+          background: var(--border);
+          border-radius: var(--radius);
+          overflow: hidden;
+          border: 1px solid var(--border);
+        }
+
+        .stat {
+          flex: 1;
+          background: var(--surface);
+          padding: 16px 20px;
+          text-align: center;
+        }
+
+        .stat-value {
+          font-family: 'Syne', sans-serif;
+          font-size: 24px;
+          font-weight: 700;
+          color: var(--text);
+          line-height: 1;
+          margin-bottom: 4px;
+        }
+
+        .stat-label {
+          font-size: 10px;
+          color: var(--text-muted);
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+        }
+
+        /* ── Controls ── */
+        .controls {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 24px;
+          flex-wrap: wrap;
+        }
+
+        .controls-left {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          flex: 1;
+        }
+
+        .filter-btn {
+          font-family: 'DM Mono', monospace;
+          font-size: 10px;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          padding: 6px 12px;
+          border-radius: 20px;
+          border: 1px solid var(--border);
+          background: transparent;
+          color: var(--text-muted);
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .filter-btn:hover { color: var(--text); border-color: var(--text-dim); }
+        .filter-btn.active { color: #000; background: var(--accent); border-color: var(--accent); }
+
+        .sort-select {
+          font-family: 'DM Mono', monospace;
+          font-size: 11px;
+          background: var(--surface);
+          color: var(--text-muted);
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          padding: 6px 12px;
+          cursor: pointer;
+          outline: none;
+        }
+
+        /* ── Toast ── */
+        .toast {
+          position: fixed;
+          bottom: 24px;
+          right: 24px;
+          background: var(--surface2);
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          padding: 12px 20px;
+          font-size: 12px;
+          color: var(--text);
+          z-index: 1000;
+          transform: translateY(100px);
+          opacity: 0;
+          transition: all 0.3s ease;
+          max-width: 320px;
+        }
+
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-left: 3px solid var(--green); }
+        .toast.error { border-left: 3px solid var(--red); }
+        .toast.info { border-left: 3px solid var(--accent); }
+
+        /* ── Articles grid ── */
+        .articles-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+          gap: 16px;
+        }
+
+        /* ── Article card ── */
+        .card {
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          transition: border-color 0.15s, transform 0.15s;
+          animation: fadeIn 0.3s ease both;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .card::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 2px;
+          background: var(--card-accent, var(--border));
+          transition: opacity 0.15s;
+        }
+
+        .card:hover {
+          border-color: var(--text-dim);
+          transform: translateY(-1px);
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 12px;
+        }
+
+        .card-meta {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 10px;
+          color: var(--text-muted);
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          flex-shrink: 0;
+        }
+
+        .card-meta-dot { color: var(--text-dim); }
+
+        .confidence-badge {
+          font-size: 11px;
+          font-weight: 500;
+          padding: 3px 8px;
+          border-radius: 4px;
+          border: 1px solid;
+          flex-shrink: 0;
+        }
+
+        .card-title {
+          font-family: 'Syne', sans-serif;
+          font-size: 15px;
+          font-weight: 600;
+          line-height: 1.4;
+          color: var(--text);
+        }
+
+        .card-title a {
+          color: inherit;
+          text-decoration: none;
+        }
+        .card-title a:hover { color: var(--accent); }
+
+        .card-summary {
+          font-size: 12px;
+          line-height: 1.7;
+          color: var(--text-muted);
+          flex: 1;
+        }
+
+        .card-summary.no-analysis {
+          color: var(--text-dim);
+          font-style: italic;
+        }
+
+        .tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+
+        .tag {
+          font-size: 10px;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          padding: 3px 8px;
+          border-radius: 4px;
+          font-weight: 500;
+        }
+
+        .card-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-top: 12px;
+          border-top: 1px solid var(--border);
+        }
+
+        .card-date {
+          font-size: 10px;
+          color: var(--text-dim);
+          letter-spacing: 0.5px;
+        }
+
+        .analyse-btn {
+          font-family: 'DM Mono', monospace;
+          font-size: 10px;
+          letter-spacing: 1px;
+          text-transform: uppercase;
+          padding: 5px 10px;
+          border-radius: 4px;
+          border: 1px solid var(--border);
+          background: transparent;
+          color: var(--text-muted);
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .analyse-btn:hover {
+          border-color: var(--accent);
+          color: var(--accent);
+        }
+
+        .analyse-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ── Empty / Loading states ── */
+        .empty-state {
+          grid-column: 1/-1;
+          text-align: center;
+          padding: 80px 24px;
+          color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+          font-size: 40px;
+          margin-bottom: 16px;
+          opacity: 0.4;
+        }
+
+        .empty-state h3 {
+          font-family: 'Syne', sans-serif;
+          font-size: 18px;
+          font-weight: 600;
+          color: var(--text-dim);
+          margin-bottom: 8px;
+        }
+
+        .empty-state p {
+          font-size: 12px;
+          color: var(--text-dim);
+        }
+
+        .skeleton {
+          background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
+          border-radius: 4px;
+        }
+
+        @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+
+        /* ── Tag colours ── */
+        .tag-CYBERSECURITY { background: rgba(255,77,109,0.12); color: #ff4d6d; border: 1px solid rgba(255,77,109,0.25); }
+        .tag-GEOPOLITICAL { background: rgba(255,159,67,0.12); color: #ff9f43; border: 1px solid rgba(255,159,67,0.25); }
+        .tag-AI_RISK { background: rgba(123,97,255,0.12); color: #9b8aff; border: 1px solid rgba(123,97,255,0.25); }
+        .tag-MISINFORMATION { background: rgba(255,209,102,0.12); color: #ffd166; border: 1px solid rgba(255,209,102,0.25); }
+        .tag-ECONOMIC { background: rgba(0,229,160,0.12); color: #00e5a0; border: 1px solid rgba(0,229,160,0.25); }
+        .tag-PRIVACY { background: rgba(74,158,255,0.12); color: #4a9eff; border: 1px solid rgba(74,158,255,0.25); }
+        .tag-INFRASTRUCTURE { background: rgba(155,89,182,0.12); color: #c39bd3; border: 1px solid rgba(155,89,182,0.25); }
+        .tag-LOW_RELEVANCE { background: rgba(107,114,128,0.12); color: #6b7280; border: 1px solid rgba(107,114,128,0.2); }
+
+        /* Card accent by top tag */
+        .card[data-top-tag="CYBERSECURITY"] { --card-accent: #ff4d6d; }
+        .card[data-top-tag="GEOPOLITICAL"] { --card-accent: #ff9f43; }
+        .card[data-top-tag="AI_RISK"] { --card-accent: #9b8aff; }
+        .card[data-top-tag="MISINFORMATION"] { --card-accent: #ffd166; }
+        .card[data-top-tag="ECONOMIC"] { --card-accent: #00e5a0; }
+        .card[data-top-tag="PRIVACY"] { --card-accent: #4a9eff; }
+        .card[data-top-tag="INFRASTRUCTURE"] { --card-accent: #c39bd3; }
+
+        /* Confidence colours */
+        .conf-high { color: var(--green); border-color: rgba(0,229,160,0.3); background: rgba(0,229,160,0.08); }
+        .conf-mid { color: var(--yellow); border-color: rgba(255,209,102,0.3); background: rgba(255,209,102,0.08); }
+        .conf-low { color: var(--text-dim); border-color: var(--border); background: transparent; }
+
+        @media (max-width: 600px) {
+          .articles-grid { grid-template-columns: 1fr; }
+          .stats-bar { flex-wrap: wrap; }
+          .header-inner { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="header-inner">
+            <div class="logo-block">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="7" cy="7" r="2.5" stroke="#00d4ff" stroke-width="1.5"/>
+                            <path d="M7 1v2M7 11v2M1 7h2M11 7h2" stroke="#00d4ff" stroke-width="1.5"
+                                  stroke-linecap="round"/>
+                            <path d="M3 3l1.5 1.5M9.5 9.5L11 11M11 3l-1.5 1.5M4.5 9.5L3 11" stroke="#00d4ff"
+                                  stroke-width="1" stroke-linecap="round" opacity="0.5"/>
+                        </svg>
+                    </div>
+                    Intelli<span class="accent">Watch</span>
+                </div>
+                <div class="tagline">Threat Intelligence Feed</div>
+            </div>
+
+            <div class="header-actions">
+                <div class="status-pill">
+                    <div class="status-dot"></div>
+                    Live
+                </div>
+                <button class="btn btn-ghost" onclick="loadArticles()">
+                    <span class="btn-label">↻ Refresh</span>
+                    <span class="spinner"></span>
+                </button>
+                <button class="btn btn-secondary" onclick="analyseAll(this)">
+                    <span class="btn-label">⚡ Analyse All</span>
+                    <span class="spinner"></span>
+                </button>
+                <button class="btn btn-primary" onclick="fetchArticles(this)">
+                    <span class="btn-label">+ Fetch</span>
+                    <span class="spinner"></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-bar">
+        <div class="stat">
+            <div class="stat-value" id="stat-total">—</div>
+            <div class="stat-label">Total Articles</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="stat-analysed">—</div>
+            <div class="stat-label">Analysed</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="stat-high">—</div>
+            <div class="stat-label">High Relevance</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value" id="stat-tags">—</div>
+            <div class="stat-label">Unique Tags</div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <div class="controls-left" id="filter-bar">
+            <button class="filter-btn active" data-tag="ALL" onclick="setFilter('ALL', this)">All</button>
+        </div>
+        <select class="sort-select" id="sort-select" onchange="renderArticles()">
+            <option value="newest">Newest First</option>
+            <option value="confidence">Highest Confidence</option>
+            <option value="unanalysed">Unanalysed First</option>
+        </select>
+    </div>
+
+    <!-- Articles -->
+    <div class="articles-grid" id="articles-grid">
+        <div class="empty-state">
+            <div class="empty-state-icon">◎</div>
+            <h3>No articles loaded</h3>
+            <p>Click "Fetch" to pull the latest stories from HackerNews</p>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+    const API = '';
+    let allArticles = [];
+    let activeFilter = 'ALL';
+
+    const TAG_ORDER = ['CYBERSECURITY','GEOPOLITICAL','AI_RISK','MISINFORMATION','ECONOMIC','PRIVACY','INFRASTRUCTURE','LOW_RELEVANCE'];
+
+    function showToast(msg, type = 'info') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `toast ${type} show`;
+      setTimeout(() => t.classList.remove('show'), 3500);
+    }
+
+    function setLoading(btn, loading) {
+      if (!btn) return;
+      btn.classList.toggle('loading', loading);
+      btn.disabled = loading;
+    }
+
+    function setFilter(tag, el) {
+      activeFilter = tag;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      renderArticles();
+    }
+
+    function updateStats(articles) {
+      const analysed = articles.filter(a => a.summary);
+      const highRelevance = articles.filter(a => a.confidenceScore >= 0.6);
+      const allTags = new Set(articles.flatMap(a => a.riskTags || []));
+
+      document.getElementById('stat-total').textContent = articles.length;
+      document.getElementById('stat-analysed').textContent = analysed.length;
+      document.getElementById('stat-high').textContent = highRelevance.length;
+      document.getElementById('stat-tags').textContent = allTags.size;
+
+      // Build filter buttons
+      const bar = document.getElementById('filter-bar');
+      const existing = new Set(['ALL']);
+      bar.innerHTML = `<button class="filter-btn ${activeFilter === 'ALL' ? 'active' : ''}" data-tag="ALL" onclick="setFilter('ALL', this)">All</button>`;
+
+      TAG_ORDER.forEach(tag => {
+        if (articles.some(a => (a.riskTags || []).includes(tag))) {
+          const count = articles.filter(a => (a.riskTags || []).includes(tag)).length;
+          bar.innerHTML += `<button class="filter-btn ${activeFilter === tag ? 'active' : ''}" data-tag="${tag}" onclick="setFilter('${tag}', this)">${tag.replace('_', ' ')} <span style="opacity:0.5">${count}</span></button>`;
+        }
+      });
+    }
+
+    function confidenceClass(score) {
+      if (score >= 0.6) return 'conf-high';
+      if (score >= 0.3) return 'conf-mid';
+      return 'conf-low';
+    }
+
+    function formatDate(str) {
+      const d = new Date(str);
+      return d.toLocaleDateString('en-AU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    }
+
+    function renderArticles() {
+      const grid = document.getElementById('articles-grid');
+      const sort = document.getElementById('sort-select').value;
+
+      let filtered = activeFilter === 'ALL'
+        ? [...allArticles]
+        : allArticles.filter(a => (a.riskTags || []).includes(activeFilter));
+
+      if (sort === 'confidence') {
+        filtered.sort((a, b) => (b.confidenceScore || 0) - (a.confidenceScore || 0));
+      } else if (sort === 'unanalysed') {
+        filtered.sort((a, b) => (a.summary ? 1 : -1) - (b.summary ? 1 : -1));
+      } else {
+        filtered.sort((a, b) => new Date(b.fetchedAt) - new Date(a.fetchedAt));
+      }
+
+      if (!filtered.length) {
+        grid.innerHTML = `<div class="empty-state"><div class="empty-state-icon">◎</div><h3>No articles</h3><p>No articles match the current filter</p></div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map((a, i) => {
+        const topTag = (a.riskTags || [])[0] || '';
+        const hasAnalysis = !!a.summary;
+        const confClass = hasAnalysis ? confidenceClass(a.confidenceScore) : '';
+        const confLabel = hasAnalysis ? `${Math.round(a.confidenceScore * 100)}%` : '—';
+
+        return `
+          <div class="card" data-top-tag="${topTag}" style="animation-delay:${i * 30}ms">
+            <div class="card-header">
+              <div class="card-meta">
+                <span>${a.source || 'Unknown'}</span>
+                <span class="card-meta-dot">·</span>
+                <span>${formatDate(a.fetchedAt)}</span>
+              </div>
+              ${hasAnalysis ? `<span class="confidence-badge ${confClass}">${confLabel}</span>` : ''}
+            </div>
+
+            <div class="card-title">
+              <a href="${a.url}" target="_blank" rel="noopener">${a.title}</a>
+            </div>
+
+            <div class="card-summary ${hasAnalysis ? '' : 'no-analysis'}">
+              ${hasAnalysis ? a.summary : 'Not yet analysed — click Analyse below'}
+            </div>
+
+            ${hasAnalysis && a.riskTags?.length ? `
+              <div class="tags">
+                ${a.riskTags.map(t => `<span class="tag tag-${t}">${t.replace('_', ' ')}</span>`).join('')}
+              </div>` : ''}
+
+            <div class="card-footer">
+              <span class="card-date">#${a.id}</span>
+              ${!hasAnalysis ? `<button class="analyse-btn" onclick="analyseSingle(${a.id}, this)">Analyse →</button>` : '<span style="font-size:10px;color:var(--green)">✓ Analysed</span>'}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    async function loadArticles() {
+      try {
+        const res = await fetch(`${API}/api/articles`);
+        allArticles = await res.json();
+        updateStats(allArticles);
+        renderArticles();
+      } catch (e) {
+        showToast('Failed to load articles', 'error');
+      }
+    }
+
+    async function fetchArticles(btn) {
+      setLoading(btn, true);
+      try {
+        const res = await fetch(`${API}/api/articles/fetch`, { method: 'POST' });
+        const data = await res.json();
+        showToast(`Fetched ${data.length} new articles`, 'success');
+        await loadArticles();
+      } catch (e) {
+        showToast('Failed to fetch articles', 'error');
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    async function analyseAll(btn) {
+      setLoading(btn, true);
+      showToast('Analysing articles — this may take a while due to rate limits', 'info');
+      try {
+        const res = await fetch(`${API}/api/articles/analyse-all`, { method: 'POST' });
+        allArticles = await res.json();
+        updateStats(allArticles);
+        renderArticles();
+        showToast('Analysis complete', 'success');
+      } catch (e) {
+        showToast('Analysis failed', 'error');
+      } finally {
+        setLoading(btn, false);
+      }
+    }
+
+    async function analyseSingle(id, btn) {
+      btn.disabled = true;
+      btn.textContent = '...';
+      try {
+        const res = await fetch(`${API}/api/articles/${id}/analyse`, { method: 'POST' });
+        const updated = await res.json();
+        allArticles = allArticles.map(a => a.id === id ? updated : a);
+        updateStats(allArticles);
+        renderArticles();
+        showToast('Article analysed', 'success');
+      } catch (e) {
+        showToast('Analysis failed', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Analyse →';
+      }
+    }
+
+    // Load on start
+    loadArticles();
+</script>
+</body>
+</html>
