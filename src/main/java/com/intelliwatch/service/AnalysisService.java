@@ -23,11 +23,11 @@ public class AnalysisService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    @Value("${anthropic.api.key}")
-    private String anthropicApiKey;
+    @Value("${gemini.api.key}")
+    private String geminiApiKey;
 
-    private static final String ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-    private static final String MODEL = "claude-sonnet-4-20250514";
+    private static final String GEMINI_URL =
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=";
 
     public Article analyseArticle(Long articleId) {
         Article article = articleRepository.findById(articleId)
@@ -36,7 +36,7 @@ public class AnalysisService {
         log.info("Analysing article: {}", article.getTitle());
 
         String prompt = buildPrompt(article);
-        String response = callAnthropicApi(prompt);
+        String response = callGeminiApi(prompt);
         parseAndUpdateArticle(article, response);
 
         return articleRepository.save(article);
@@ -53,6 +53,11 @@ public class AnalysisService {
         for (Article article : unanalysed) {
             try {
                 analyseArticle(article.getId());
+                Thread.sleep(15000); // 15 second delay to respect 5 RPM limit
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.warn("Analysis interrupted");
+                break;
             } catch (Exception e) {
                 log.warn("Failed to analyse article {}: {}", article.getId(), e.getMessage());
             }
@@ -81,22 +86,24 @@ public class AnalysisService {
                 """.formatted(article.getTitle(), article.getUrl());
     }
 
-    private String callAnthropicApi(String prompt) {
+    private String callGeminiApi(String prompt) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("x-api-key", anthropicApiKey);
-        headers.set("anthropic-version", "2023-06-01");
 
         Map<String, Object> body = Map.of(
-                "model", MODEL,
-                "max_tokens", 1024,
-                "messages", List.of(
-                        Map.of("role", "user", "content", prompt)
+                "contents", List.of(
+                        Map.of("parts", List.of(
+                                Map.of("text", prompt)
+                        ))
                 )
         );
 
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-        ResponseEntity<String> response = restTemplate.postForEntity(ANTHROPIC_URL, request, String.class);
+        ResponseEntity<String> response = restTemplate.postForEntity(
+                GEMINI_URL + geminiApiKey,
+                request,
+                String.class
+        );
 
         return response.getBody();
     }
@@ -104,7 +111,18 @@ public class AnalysisService {
     private void parseAndUpdateArticle(Article article, String responseBody) {
         try {
             JsonNode root = objectMapper.readTree(responseBody);
-            String content = root.path("content").get(0).path("text").asText();
+
+            // Gemini response structure:
+            // candidates[0].content.parts[0].text
+            String content = root
+                    .path("candidates").get(0)
+                    .path("content")
+                    .path("parts").get(0)
+                    .path("text")
+                    .asText();
+
+            // Strip markdown code fences if Gemini adds them
+            content = content.replaceAll("```json", "").replaceAll("```", "").trim();
 
             JsonNode parsed = objectMapper.readTree(content);
 
@@ -119,7 +137,7 @@ public class AnalysisService {
             article.setRiskTags(riskTags);
 
         } catch (Exception e) {
-            log.error("Failed to parse Anthropic response: {}", e.getMessage());
+            log.error("Failed to parse Gemini response: {}", e.getMessage());
             article.setSummary("Analysis failed");
             article.setRiskTags(new String[]{"LOW_RELEVANCE"});
             article.setConfidenceScore(0.0);
