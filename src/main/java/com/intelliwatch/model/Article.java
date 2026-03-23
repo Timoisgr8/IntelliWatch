@@ -1,4 +1,4 @@
-package com.intelliwatch.intelliwatch.model;
+package com.intelliwatch.model;
 
 import jakarta.persistence.*;
 import lombok.Data;

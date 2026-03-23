@@ -1,4 +1,4 @@
-package com.intelliwatch.intelliwatch;
+package com.intelliwatch;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
