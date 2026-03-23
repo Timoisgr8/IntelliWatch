@@ -1,0 +1,18 @@
+# Database
+spring.datasource.url=jdbc:postgresql://localhost:5432/intelliwatch
+spring.datasource.username=postgres
+spring.datasource.password=YOUR_PASSWORD
+
+# Anthropic
+anthropic.api.key=YOUR_ANTHROPIC_API_KEY
+
+# JPA
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.open-in-view=false
+spring.jpa.show-sql=true
+
+# Flyway
+spring.flyway.enabled=true
+spring.flyway.locations=classpath:db/migration
+
+server.port=8080
